@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>돌려돌려 돌림판! | 재미있는 무작위 추첨</title>
+  <meta name="description" content="친구들과 식사비 내기, 설거지 당번, 커피 쏘기 등 다양한 순간에 공정하고 재미있게 한 명을 뽑는 반응형 무작위 선정 웹 애플리케이션입니다.">
+  
+  <!-- Pretendard Web Font -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient background glow elements -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-glow glow-3"></div>
+
+  <!-- Main Container -->
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-badge">
+        <span class="badge-icon">🎯</span>
+        <span>공정한 랜덤 피커</span>
+      </div>
+      <h1 class="main-title">돌려돌려 <span class="gradient-text">랜덤 돌림판</span></h1>
+      <p class="sub-title">누가 걸릴까? 돌려서 시원하게 정하자!</p>
+      
+      <!-- Quick Action Bar -->
+      <div class="sound-control-wrapper">
+        <button id="soundToggleBtn" class="icon-toggle-btn" title="효과음 켜기/끄기" aria-label="효과음 토글">
+          <span id="soundIcon">🔊</span>
+          <span id="soundText" class="btn-text-sm">소리 ON</span>
+        </button>
+      </div>
+    </header>
+
+
+    <!-- Layout Grid -->
+    <main class="main-grid">
+      <!-- Left / Top Column: Participants Management -->
+      <section class="card input-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="card-icon">👥</span>
+            <h2>참가자 명단</h2>
+          </div>
+          <span id="participantBadge" class="count-badge">0명</span>
+        </div>
+
+        <!-- Input Form -->
+        <form id="addNameForm" class="name-input-group" onsubmit="return false;">
+          <input 
+            type="text" 
+            id="nameInput" 
+            placeholder="이름 입력 (예: 민수, 지호 또는 쉼표로 여러명)" 
+            autocomplete="off"
+            maxlength="20"
+          />
+          <button type="submit" id="addBtn" class="btn btn-primary">
+            <span>추가</span>
+            <span class="plus-icon">+</span>
+          </button>
+        </form>
+
+        <div class="quick-helpers">
+          <button type="button" id="sampleDataBtn" class="helper-btn">
+            <span>✨ 예시 명단 채우기</span>
+          </button>
+          <button type="button" id="clearAllBtn" class="helper-btn danger">
+            <span>🗑️ 전체 비우기</span>
+          </button>
+        </div>
+
+        <!-- Participant List / Chips -->
+        <div class="tags-container" id="tagsContainer">
+          <div class="empty-state" id="emptyState">
+            <span class="empty-icon">📝</span>
+            <p>참가자를 2명 이상 등록해 주세요!</p>
+            <small>이름을 입력하거나 '예시 명단'을 눌러보세요.</small>
+          </div>
+        </div>
+
+        <!-- Mode selection (Roulette vs Quick Slot) -->
+        <div class="view-mode-tabs">
+          <button type="button" class="mode-tab active" data-mode="wheel">🎡 룰렛 돌림판</button>
+          <button type="button" class="mode-tab" data-mode="card">⚡ 스피드 카드 롤링</button>
+        </div>
+      </section>
+
+      <!-- Right / Bottom Column: Random Picker Stage -->
+      <section class="card stage-card">
+        <div class="card-header center">
+          <div class="stage-status-wrap">
+            <span id="currentEventTitle" class="event-tag">🎯 오늘의 랜덤 추첨</span>
+          </div>
+        </div>
+
+        <!-- Wheel View Container -->
+        <div id="wheelContainer" class="wheel-stage-view">
+          <div class="wheel-wrapper">
+            <!-- Wheel Pointer Arrow -->
+            <div class="wheel-pointer">
+              <svg viewBox="0 0 40 46" width="36" height="42" fill="none">
+                <path d="M20 44L4 12C2 8 5 2 10 2H30C35 2 38 8 36 12L20 44Z" fill="#806044"/>
+                <path d="M20 41L7 13C5.5 10 7.5 5 11 5H29C32.5 5 34.5 10 33 13L20 41Z" fill="#B8875B"/>
+                <circle cx="20" cy="14" r="5" fill="#FFF"/>
+              </svg>
+            </div>
+            <!-- Canvas Wheel -->
+            <canvas id="wheelCanvas" width="420" height="420"></canvas>
+            <!-- Center Start Button Inside Wheel -->
+            <button type="button" id="centerSpinBtn" class="wheel-center-btn" aria-label="돌리기">
+              <span class="spin-text">START!</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Card Slot Roller View (Alternative fast mode) -->
+        <div id="cardContainer" class="card-stage-view hidden">
+          <div class="slot-display-box">
+            <div class="slot-rolling-text" id="slotText">준비 완료!</div>
+            <div class="slot-subtext">버튼을 눌러 운명의 주인공을 뽑아보세요</div>
+          </div>
+        </div>
+
+        <!-- Action Control Buttons -->
+        <div class="stage-actions">
+          <button type="button" id="spinBtn" class="btn btn-glow-action">
+            <span class="btn-icon">🎲</span>
+            <span id="spinBtnText" class="btn-label">랜덤 선정 시작!</span>
+          </button>
+          <button type="button" id="resetBtn" class="btn btn-secondary">
+            <span>🔄 다시 뽑기</span>
+          </button>
+        </div>
+
+        <!-- Winner Celebration Banner / Box -->
+        <div id="winnerBanner" class="winner-banner hidden">
+          <div class="winner-tag">🎉 축하합니다! 당첨! 🎉</div>
+          <div class="winner-name-wrap">
+            <span class="crown-icon">👑</span>
+            <h3 id="winnerName" class="winner-name">홍길동</h3>
+          </div>
+          <p id="winnerMessage" class="winner-desc">오늘의 행운의 주인공입니다!</p>
+          <div class="winner-quick-actions">
+            <button type="button" id="excludeAndSpinBtn" class="btn-sm btn-outline-danger">
+              ❌ 당첨자 제외하고 다시 뽑기
+            </button>
+            <button type="button" id="copyResultBtn" class="btn-sm btn-outline-primary">
+              📋 결과 복사
+            </button>
+          </div>
+        </div>
+
+        <!-- History Section (Recent picks) -->
+        <div class="history-accordion">
+          <div class="history-toggle" id="historyToggle">
+            <span>📜 선정 기록 (<span id="historyCount">0</span>)</span>
+            <span class="toggle-arrow">▼</span>
+          </div>
+          <div id="historyListWrap" class="history-content hidden">
+            <ul id="historyList" class="history-list">
+              <li class="history-empty">아직 추첨 기록이 없습니다.</li>
+            </ul>
+            <button type="button" id="clearHistoryBtn" class="history-clear-btn">기록 삭제</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>✨ 100% 무작위 난수 알고리즘을 사용한 투명하고 공정한 선정 시스템입니다.</p>
+    </footer>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- Confetti Canvas -->
+  <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
+
+  <script src="app.js"></script>
+</body>
+</html>
